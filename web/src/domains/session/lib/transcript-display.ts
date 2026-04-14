@@ -326,10 +326,24 @@ function toWorkspacePathCandidate(
     return null;
   }
 
+  const hasLowercaseHint = /[a-z]/.test(normalizedPath);
   const leaf = segments.at(-1) ?? "";
   const hasSlash = segments.length > 1;
   const isRootDotfile = !hasSlash && leaf.startsWith(".");
   if (!hasSlash && !isRootDotfile) {
+    return null;
+  }
+
+  if (!isRootDotfile && !hasLowercaseHint) {
+    return null;
+  }
+
+  if (
+    hasSlash &&
+    !leaf.includes(".") &&
+    segments.some((segment) => segment.includes(".")) &&
+    !token.endsWith("/")
+  ) {
     return null;
   }
 

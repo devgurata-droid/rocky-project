@@ -34,7 +34,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import { WorkspaceAwareMarkdownLink } from "@/shared/components/workspace-aware-markdown-link";
 import { IconButton } from "@/shared/ui/icon-button";
+import {
+  type WorkspacePreviewPathKind,
+} from "@/shared/lib/workspace-link-target";
 import { SyntaxCodeBlock } from "@/shared/ui/syntax-code-block";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
@@ -275,13 +279,19 @@ function TruncatedLabel(props: {
 function CodePreviewPanel(props: {
   record: AgentWorkspaceFilePreviewRecord;
   text: string;
+  compact?: boolean;
 }) {
   const language = codeLanguageMetadata(props.record);
   const lines = props.text.split(/\r?\n/);
 
   return (
     <div className="h-full overflow-auto bg-slate-950 text-slate-100">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-slate-950/95 px-4 py-3 backdrop-blur">
+      <div
+        className={cn(
+          "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-slate-950/95 backdrop-blur",
+          props.compact ? "px-3 py-2" : "px-4 py-3",
+        )}
+      >
         <span className="text-label-md uppercase text-slate-300">
           {language.label}
         </span>
@@ -298,17 +308,23 @@ function CodePreviewPanel(props: {
 function TextPreviewPanel(props: {
   record: AgentWorkspaceFilePreviewRecord;
   text: string;
+  compact?: boolean;
 }) {
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 text-label-md text-muted-foreground">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 border-b border-border text-label-md text-muted-foreground",
+          props.compact ? "px-3 py-2" : "px-4 py-3",
+        )}
+      >
         <span>{props.record.contentType}</span>
         <span>
           {props.record.lineCount ?? 0}줄
           {props.record.truncated ? " · 잘림" : ""}
         </span>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto px-4 py-4">
+      <div className={cn("min-h-0 flex-1 overflow-auto", props.compact ? "px-3 py-3" : "px-4 py-4")}>
         <pre className="whitespace-pre-wrap break-words font-mono text-body-sm leading-6 text-foreground">
           {props.text}
         </pre>
@@ -320,24 +336,31 @@ function TextPreviewPanel(props: {
 function SourceTextPanel(props: {
   record: AgentWorkspaceFilePreviewRecord;
   text: string;
+  compact?: boolean;
 }) {
-  return <CodePreviewPanel record={props.record} text={props.text} />;
+  return <CodePreviewPanel record={props.record} text={props.text} compact={props.compact} />;
 }
 
 function MarkdownPreviewPanel(props: {
   record: AgentWorkspaceFilePreviewRecord;
   text: string;
+  workspaceRoot: string;
+  onOpenWorkspacePath: (path: string, pathKind: WorkspacePreviewPathKind) => void;
+  compact?: boolean;
 }) {
   return (
     <Tabs key={props.record.path} defaultValue="preview" className="flex h-full min-h-0 flex-col gap-0">
-      <div className="shrink-0 border-b border-border px-4 py-3">
+      <div className={cn("shrink-0 border-b border-border", props.compact ? "px-3 py-2" : "px-4 py-3")}>
         <TabsList className="rounded-full bg-muted p-1">
           <TabsTrigger value="preview">미리보기</TabsTrigger>
           <TabsTrigger value="source">원본</TabsTrigger>
         </TabsList>
       </div>
 
-      <TabsContent value="preview" className="min-h-0 flex-1 overflow-auto px-5 py-5">
+      <TabsContent
+        value="preview"
+        className={cn("min-h-0 flex-1 overflow-auto", props.compact ? "px-3 py-3" : "px-5 py-5")}
+      >
         <article className="space-y-4 text-body-md leading-7 text-foreground">
           <ReactMarkdown
             components={{
@@ -345,13 +368,15 @@ function MarkdownPreviewPanel(props: {
               h2: (props) => <h2 className="text-xl font-semibold tracking-tight" {...props} />,
               h3: (props) => <h3 className="text-lg font-semibold" {...props} />,
               p: (props) => <p className="leading-7 text-foreground" {...props} />,
-              a: (props) => (
-                <a
-                  {...props}
-                  className="font-medium text-foreground underline decoration-border underline-offset-4"
-                  target="_blank"
-                  rel="noreferrer"
-                />
+              a: ({ children, href }) => (
+                <WorkspaceAwareMarkdownLink
+                  href={href}
+                  workspaceRoot={props.workspaceRoot}
+                  onOpenWorkspacePath={props.onOpenWorkspacePath}
+                  className="inline border-0 bg-transparent p-0 font-medium text-foreground underline decoration-border underline-offset-4"
+                >
+                  {children}
+                </WorkspaceAwareMarkdownLink>
               ),
               ul: (props) => <ul className="list-disc space-y-2 pl-5" {...props} />,
               ol: (props) => <ol className="list-decimal space-y-2 pl-5" {...props} />,
@@ -392,7 +417,7 @@ function MarkdownPreviewPanel(props: {
       </TabsContent>
 
       <TabsContent value="source" className="min-h-0 flex-1 overflow-hidden">
-        <SourceTextPanel record={props.record} text={props.text} />
+        <SourceTextPanel record={props.record} text={props.text} compact={props.compact} />
       </TabsContent>
     </Tabs>
   );
@@ -401,10 +426,11 @@ function MarkdownPreviewPanel(props: {
 function HtmlPreviewPanel(props: {
   record: AgentWorkspaceFilePreviewRecord;
   text: string;
+  compact?: boolean;
 }) {
   return (
     <Tabs key={props.record.path} defaultValue="preview" className="flex h-full min-h-0 flex-col gap-0">
-      <div className="shrink-0 border-b border-border px-4 py-3">
+      <div className={cn("shrink-0 border-b border-border", props.compact ? "px-3 py-2" : "px-4 py-3")}>
         <TabsList className="rounded-full bg-muted p-1">
           <TabsTrigger value="preview">미리보기</TabsTrigger>
           <TabsTrigger value="source">원본</TabsTrigger>
@@ -421,7 +447,7 @@ function HtmlPreviewPanel(props: {
       </TabsContent>
 
       <TabsContent value="source" className="min-h-0 flex-1 overflow-hidden">
-        <SourceTextPanel record={props.record} text={props.text} />
+        <SourceTextPanel record={props.record} text={props.text} compact={props.compact} />
       </TabsContent>
     </Tabs>
   );
@@ -472,22 +498,33 @@ function VideoPreviewPanel(props: {
 function WorkspacePreviewSurface(props: {
   record: AgentWorkspaceFilePreviewRecord;
   previewHref: string | null;
+  workspaceRoot: string;
+  onOpenWorkspacePath: (path: string, pathKind: WorkspacePreviewPathKind) => void;
+  compact?: boolean;
 }) {
   const formattedText = formattedCodeText(props.record);
   const contentType = normalizedContentType(props.record.contentType);
 
   switch (props.record.previewKind) {
     case "code":
-      return <CodePreviewPanel record={props.record} text={formattedText} />;
+      return <CodePreviewPanel record={props.record} text={formattedText} compact={props.compact} />;
     case "markdown":
-      return <MarkdownPreviewPanel record={props.record} text={props.record.text ?? ""} />;
+      return (
+        <MarkdownPreviewPanel
+          record={props.record}
+          text={props.record.text ?? ""}
+          workspaceRoot={props.workspaceRoot}
+          onOpenWorkspacePath={props.onOpenWorkspacePath}
+          compact={props.compact}
+        />
+      );
     case "html":
-      return <HtmlPreviewPanel record={props.record} text={props.record.text ?? ""} />;
+      return <HtmlPreviewPanel record={props.record} text={props.record.text ?? ""} compact={props.compact} />;
     case "text":
-      return <TextPreviewPanel record={props.record} text={props.record.text ?? ""} />;
+      return <TextPreviewPanel record={props.record} text={props.record.text ?? ""} compact={props.compact} />;
     case "image":
       return props.previewHref ? (
-        <div className="flex h-full items-center justify-center overflow-auto bg-secondary/40 p-4">
+        <div className={cn("flex h-full items-center justify-center overflow-auto bg-secondary/40", props.compact ? "p-1" : "p-4")}>
           <img
             src={props.previewHref}
             alt={props.record.name}
@@ -501,7 +538,7 @@ function WorkspacePreviewSurface(props: {
       );
     case "audio":
       return props.previewHref ? (
-        <div className="flex h-full items-center justify-center bg-muted/40 p-6">
+        <div className={cn("flex h-full items-center justify-center bg-muted/40", props.compact ? "p-3" : "p-6")}>
           <audio controls className="w-full max-w-2xl" src={props.previewHref}>
             브라우저가 오디오 미리보기를 지원하지 않습니다.
           </audio>
@@ -516,7 +553,7 @@ function WorkspacePreviewSurface(props: {
     case "document":
       return props.previewHref && contentType === "application/pdf" ? (
         <div className="flex h-full flex-col overflow-hidden bg-muted/20">
-          <div className="flex shrink-0 justify-end border-b border-border px-4 py-3">
+          <div className={cn("flex shrink-0 justify-end border-b border-border", props.compact ? "px-3 py-2" : "px-4 py-3")}>
             <a
               href={props.previewHref}
               target="_blank"
@@ -556,6 +593,137 @@ function UnsupportedPreviewMessage(props: { children: ReactNode }) {
     <div className="flex h-full items-center justify-center p-6">
       <div className="max-w-lg rounded-2xl border border-dashed border-border bg-muted/40 px-5 py-6 text-center text-body-md leading-6 text-muted-foreground">
         {props.children}
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceFilePreviewPanel(props: {
+  selectedFilePath: string | null;
+  record: AgentWorkspaceFilePreviewRecord | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+  previewHref: string | null;
+  downloadHref: string | null;
+  workspaceRoot: string;
+  onOpenWorkspacePath: (path: string, pathKind: WorkspacePreviewPathKind) => void;
+  emptyStateTitle: string;
+  emptyStateDescription: string;
+  className?: string;
+  bare?: boolean;
+}) {
+  if (!props.selectedFilePath) {
+    return (
+      <div
+        data-testid="agent-workspace-file-preview-empty"
+        className={cn(
+          "flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center",
+          props.className,
+        )}
+      >
+        <div className="space-y-2">
+          <p className="text-body-md font-semibold text-foreground">{props.emptyStateTitle}</p>
+          <p className="text-body-md leading-6 text-muted-foreground">
+            {props.emptyStateDescription}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-testid="agent-workspace-file-preview"
+      className={cn(
+        "flex h-full min-h-0 flex-col overflow-hidden",
+        props.bare ? "" : "rounded-2xl border border-border bg-card",
+        props.className,
+      )}
+    >
+      <div className={cn("shrink-0 border-b border-border", props.bare ? "px-0 py-0 pb-4" : "px-5 py-4")}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2 text-label-md uppercase text-muted-foreground">
+              <span className="flex size-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                {previewKindIcon(props.record?.previewKind ?? null, "file")}
+              </span>
+              <span>{previewKindLabel(props.record?.previewKind ?? null)}</span>
+              {props.record ? (
+                <>
+                  <span>{formatBytes(props.record.size)}</span>
+                  <span>{formatUpdatedAt(props.record.updatedAt)}</span>
+                </>
+              ) : null}
+            </div>
+            <div className="mt-3 min-w-0 text-xl">
+              <TruncatedLabel
+                text={
+                  props.record?.name ??
+                  props.selectedFilePath.slice(props.selectedFilePath.lastIndexOf("/") + 1) ??
+                  ""
+                }
+                className="text-xl font-semibold text-foreground"
+                tooltipLabel={props.selectedFilePath}
+              />
+            </div>
+            <p className="mt-1 break-all text-body-sm leading-6 text-muted-foreground">
+              {props.selectedFilePath}
+            </p>
+          </div>
+
+          {props.downloadHref ? (
+            <a
+              href={props.downloadHref}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-body-md font-semibold text-foreground no-underline transition hover:bg-secondary"
+            >
+              <Download size={14} />
+              다운로드
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      <div className={cn("min-h-0 flex-1", props.bare ? "py-4" : "px-5 py-4")}>
+        {props.isLoading ? (
+          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 py-6 text-body-md text-muted-foreground">
+            파일 미리보기 로딩 중...
+          </div>
+        ) : null}
+
+        {props.isError ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-4 text-body-md text-destructive">
+            {props.error instanceof Error
+              ? props.error.message
+              : "파일 미리보기를 불러올 수 없습니다."}
+          </div>
+        ) : null}
+
+        {props.record ? (
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="mb-4 flex flex-wrap items-center gap-2 text-label-md text-muted-foreground">
+              <span className="rounded-full bg-secondary px-3 py-1 text-foreground">
+                {props.record.contentType}
+              </span>
+              {props.record.lineCount !== null ? (
+                <span>
+                  {props.record.lineCount}줄
+                  {props.record.truncated ? " · 일부만 표시" : ""}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-background">
+              <WorkspacePreviewSurface
+                record={props.record}
+                previewHref={props.previewHref}
+                workspaceRoot={props.workspaceRoot}
+                onOpenWorkspacePath={props.onOpenWorkspacePath}
+                compact={props.bare}
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -615,6 +783,12 @@ export function AgentWorkspaceBrowserPanel(props: {
   }, [directoryQuery.data, selectedFilePath]);
 
   const breadcrumbs = useMemo(() => pathSegments(searchPath), [searchPath]);
+  const currentPath = selectedFilePath ?? searchPath;
+  const currentPathSegments = useMemo(() => pathSegments(currentPath), [currentPath]);
+  const currentDirectorySegments = selectedFilePath
+    ? currentPathSegments.slice(0, -1)
+    : currentPathSegments;
+  const selectedFileLabel = selectedFilePath ? (currentPathSegments.at(-1)?.label ?? null) : null;
   const previewHref =
     filePreviewQuery.data?.inlinePreviewUrl === null || !filePreviewQuery.data?.inlinePreviewUrl
       ? null
@@ -639,6 +813,119 @@ export function AgentWorkspaceBrowserPanel(props: {
     setSearchPath(directoryQuery.data?.parentPath ?? "");
     setSelectedFilePath(null);
   };
+
+  async function handleOpenWorkspacePath(
+    path: string,
+    pathKind: WorkspacePreviewPathKind
+  ) {
+    const normalizedPath = path.replace(/^\.\/+/, "").replace(/\/+$/, "");
+
+    if (!normalizedPath) {
+      setSearchPath("");
+      setSelectedFilePath(null);
+      return;
+    }
+
+    if (pathKind === "directory") {
+      setSearchPath(normalizedPath);
+      setSelectedFilePath(null);
+      return;
+    }
+
+    if (pathKind === "file") {
+      const directoryPath = normalizedPath.includes("/")
+        ? normalizedPath.slice(0, normalizedPath.lastIndexOf("/"))
+        : "";
+      setSearchPath(directoryPath);
+      setSelectedFilePath(normalizedPath);
+      return;
+    }
+
+    try {
+      await agentEngineClient.listAgentWorkspace(props.agentId, normalizedPath);
+      setSearchPath(normalizedPath);
+      setSelectedFilePath(null);
+      return;
+    } catch {
+      // Fall through and try the file preview endpoint.
+    }
+
+    try {
+      await agentEngineClient.getAgentWorkspaceFilePreview(props.agentId, normalizedPath);
+      const directoryPath = normalizedPath.includes("/")
+        ? normalizedPath.slice(0, normalizedPath.lastIndexOf("/"))
+        : "";
+      setSearchPath(directoryPath);
+      setSelectedFilePath(normalizedPath);
+    } catch {
+      // Leave the current workspace view as-is when the link target is no longer valid.
+    }
+  }
+
+  const directoryList = directoryQuery.data ? (
+    <div className={embedded ? "min-h-0 flex-1 overflow-hidden" : "h-80 overflow-hidden"}>
+      {directoryQuery.data.entries.length === 0 ? (
+        <div className="flex h-full items-center rounded-2xl border border-dashed border-border bg-muted px-4 py-6 text-body-md text-muted-foreground">
+          이 폴더는 비어 있습니다.
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "flex h-full flex-col gap-1 overflow-y-auto",
+            embedded ? "pr-0" : "pr-1",
+          )}
+        >
+          {directoryQuery.data.entries.map((entry) => {
+            const selected = entry.kind === "file" && selectedFilePath === entry.path;
+            const secondaryText = entry.kind === "file" ? formatBytes(entry.size) : null;
+
+            return (
+              <Button
+                key={entry.path}
+                onClick={() => {
+                  if (entry.kind === "directory") {
+                    setSearchPath(entry.path);
+                    setSelectedFilePath(null);
+                    return;
+                  }
+
+                  setSelectedFilePath((current) => (current === entry.path ? null : entry.path));
+                }}
+                variant="ghost"
+                className={cn(
+                  "flex h-10 w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-0 text-left transition",
+                  selected
+                    ? "border-accent/40 bg-accent/10"
+                    : "border-border bg-card hover:bg-muted/50",
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground">
+                    {previewKindIcon(entry.previewKind, entry.kind)}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <TruncatedLabel
+                      text={entry.name}
+                      className="text-body-sm font-medium text-foreground"
+                      tooltipLabel={entry.path}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
+                  {secondaryText ? (
+                    <span className="text-label-sm text-muted-foreground">{secondaryText}</span>
+                  ) : null}
+                  <ChevronRight size={13} />
+                </div>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  ) : null;
 
   return (
     <>
@@ -682,12 +969,41 @@ export function AgentWorkspaceBrowserPanel(props: {
           </div>
         ) : null}
 
-        {embedded && props.embeddedTitle ? (
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-label-md font-semibold uppercase text-muted-foreground">
-                {props.embeddedTitle}
-              </p>
+        {embedded ? (
+          <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/70 pb-3">
+            <div className="-mx-1 min-w-0 flex-1 overflow-x-auto px-1">
+              <div className="flex min-w-max items-center gap-2 text-label-md uppercase text-muted-foreground">
+                <Button
+                  variant={currentPath === "" ? "default" : "secondary"}
+                  size="xs"
+                  onClick={() => {
+                    setSearchPath("");
+                    setSelectedFilePath(null);
+                  }}
+                >
+                  root
+                </Button>
+
+                {currentDirectorySegments.map((segment) => (
+                  <Button
+                    key={segment.path}
+                    variant={segment.path === searchPath ? "default" : "secondary"}
+                    size="xs"
+                    onClick={() => {
+                      setSearchPath(segment.path);
+                      setSelectedFilePath(null);
+                    }}
+                  >
+                    {segment.label}
+                  </Button>
+                ))}
+
+                {selectedFileLabel ? (
+                  <span className="inline-flex max-w-[20rem] items-center rounded-full border border-border bg-muted px-3 py-1 text-body-sm font-medium normal-case text-foreground">
+                    {selectedFileLabel}
+                  </span>
+                ) : null}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <IconButton
@@ -712,45 +1028,47 @@ export function AgentWorkspaceBrowserPanel(props: {
           </div>
         ) : null}
 
-        <div
-          className={cn(
-            props.showHeader === false ? "" : "mt-4",
-            embedded ? "" : "rounded-2xl border border-border bg-card px-4 py-4",
-          )}
-        >
-          <div className="-mx-1 overflow-x-auto pb-1">
-            <div className="flex min-w-max items-center gap-2 px-1 text-label-md uppercase text-muted-foreground">
-              <Button
-                variant={searchPath === "" ? "default" : "secondary"}
-                size="xs"
-                onClick={() => {
-                  setSearchPath("");
-                  setSelectedFilePath(null);
-                }}
-              >
-                root
-              </Button>
-
-              {breadcrumbs.map((segment) => (
+        {!embedded ? (
+          <div
+            className={cn(
+              props.showHeader === false ? "" : "mt-4",
+              "rounded-2xl border border-border bg-card px-4 py-4",
+            )}
+          >
+            <div className="-mx-1 overflow-x-auto pb-1">
+              <div className="flex min-w-max items-center gap-2 px-1 text-label-md uppercase text-muted-foreground">
                 <Button
-                  key={segment.path}
-                  variant={segment.path === searchPath ? "default" : "secondary"}
+                  variant={searchPath === "" ? "default" : "secondary"}
                   size="xs"
                   onClick={() => {
-                    setSearchPath(segment.path);
+                    setSearchPath("");
                     setSelectedFilePath(null);
                   }}
                 >
-                  {segment.label}
+                  root
                 </Button>
-              ))}
+
+                {breadcrumbs.map((segment) => (
+                  <Button
+                    key={segment.path}
+                    variant={segment.path === searchPath ? "default" : "secondary"}
+                    size="xs"
+                    onClick={() => {
+                      setSearchPath(segment.path);
+                      setSelectedFilePath(null);
+                    }}
+                  >
+                    {segment.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         <div
           className={cn(
-            "mt-4",
+            embedded ? "" : "mt-4",
             embedded ? "flex min-h-0 flex-1 flex-col" : "space-y-4",
           )}
         >
@@ -758,7 +1076,7 @@ export function AgentWorkspaceBrowserPanel(props: {
             className={cn(
               "min-h-0",
               embedded
-                ? "flex min-h-0 flex-1 flex-col overflow-hidden border-t border-border pt-4"
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
                 : "rounded-2xl border border-border bg-card px-4 py-4",
             )}
           >
@@ -777,72 +1095,7 @@ export function AgentWorkspaceBrowserPanel(props: {
             ) : null}
 
             {directoryQuery.data ? (
-              <div className={embedded ? "min-h-0 flex-1 overflow-hidden" : "h-80 overflow-hidden"}>
-                {directoryQuery.data.entries.length === 0 ? (
-                  <div className="flex h-full items-center rounded-2xl border border-dashed border-border bg-muted px-4 py-6 text-body-md text-muted-foreground">
-                    이 폴더는 비어 있습니다.
-                  </div>
-                ) : (
-                  <div
-                    className={cn(
-                      "flex flex-col gap-1 pr-1",
-                      "h-full overflow-y-auto",
-                    )}
-                  >
-                    {directoryQuery.data.entries.map((entry) => {
-                      const selected = entry.kind === "file" && selectedFilePath === entry.path;
-                      const secondaryText = entry.kind === "file" ? formatBytes(entry.size) : null;
-
-                      return (
-                        <Button
-                          key={entry.path}
-                          onClick={() => {
-                            if (entry.kind === "directory") {
-                              setSearchPath(entry.path);
-                              setSelectedFilePath(null);
-                              return;
-                            }
-
-                            setSelectedFilePath((current) =>
-                              current === entry.path ? null : entry.path
-                            );
-                          }}
-                          variant="ghost"
-                          className={cn(
-                            "flex h-10 w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-0 text-left transition",
-                            selected
-                              ? "border-accent/40 bg-accent/10"
-                              : "border-border bg-card hover:bg-muted/50",
-                          )}
-                        >
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground">
-                              {previewKindIcon(entry.previewKind, entry.kind)}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <TruncatedLabel
-                                text={entry.name}
-                                className="text-body-sm font-medium text-foreground"
-                                tooltipLabel={entry.path}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex shrink-0 items-center gap-2 text-muted-foreground">
-                            {secondaryText ? (
-                              <span className="text-label-sm text-muted-foreground">
-                                {secondaryText}
-                              </span>
-                            ) : null}
-                            <ChevronRight size={13} />
-                          </div>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              directoryList
             ) : null}
           </div>
         </div>
@@ -857,86 +1110,27 @@ export function AgentWorkspaceBrowserPanel(props: {
         }}
       >
         <DialogContent className="flex h-[min(88vh,56rem)] max-h-[88vh] w-[min(96vw,72rem)] max-w-[72rem] flex-col gap-0 overflow-hidden border-border bg-background p-0">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 text-label-md uppercase text-muted-foreground">
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                    {previewKindIcon(filePreviewQuery.data?.previewKind ?? null, "file")}
-                  </span>
-                  <span>{previewKindLabel(filePreviewQuery.data?.previewKind ?? null)}</span>
-                  {filePreviewQuery.data ? (
-                    <>
-                      <span>{formatBytes(filePreviewQuery.data.size)}</span>
-                      <span>{formatUpdatedAt(filePreviewQuery.data.updatedAt)}</span>
-                    </>
-                  ) : null}
-                </div>
-                <DialogTitle className="mt-3 min-w-0 text-xl">
-                  <TruncatedLabel
-                    text={
-                      filePreviewQuery.data?.name ??
-                      selectedFilePath?.slice(selectedFilePath.lastIndexOf("/") + 1) ??
-                      ""
-                    }
-                    className="text-xl font-semibold text-foreground"
-                    tooltipLabel={selectedFilePath ?? undefined}
-                  />
-                </DialogTitle>
-                <DialogDescription className="mt-1 break-all text-body-sm leading-6">
-                  {selectedFilePath ?? ""}
-                </DialogDescription>
-              </div>
-
-              {downloadHref ? (
-                <a
-                  href={downloadHref}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-body-md font-semibold text-foreground no-underline transition hover:bg-secondary"
-                >
-                  <Download size={14} />
-                  다운로드
-                </a>
-              ) : null}
-            </div>
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {selectedFilePath?.slice(selectedFilePath.lastIndexOf("/") + 1) ?? "파일 미리보기"}
+            </DialogTitle>
+            <DialogDescription>{selectedFilePath ?? ""}</DialogDescription>
           </DialogHeader>
-
-          <div className="min-h-0 flex-1 px-6 py-5">
-            {filePreviewQuery.isLoading ? (
-              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-muted px-4 py-6 text-body-md text-muted-foreground">
-                파일 미리보기 로딩 중...
-              </div>
-            ) : null}
-
-            {filePreviewQuery.isError ? (
-              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-4 text-body-md text-destructive">
-                {filePreviewQuery.error instanceof Error
-                  ? filePreviewQuery.error.message
-                  : "파일 미리보기를 불러올 수 없습니다."}
-              </div>
-            ) : null}
-
-            {filePreviewQuery.data ? (
-              <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-4 flex flex-wrap items-center gap-2 text-label-md text-muted-foreground">
-                  <span className="rounded-full bg-secondary px-3 py-1 text-foreground">
-                    {filePreviewQuery.data.contentType}
-                  </span>
-                  {filePreviewQuery.data.lineCount !== null ? (
-                    <span>
-                      {filePreviewQuery.data.lineCount}줄
-                      {filePreviewQuery.data.truncated ? " · 일부만 표시" : ""}
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-border bg-background">
-                  <WorkspacePreviewSurface
-                    record={filePreviewQuery.data}
-                    previewHref={previewHref}
-                  />
-                </div>
-              </div>
-            ) : null}
+          <div className="min-h-0 flex-1 p-6">
+            <WorkspaceFilePreviewPanel
+              selectedFilePath={selectedFilePath}
+              record={filePreviewQuery.data}
+              isLoading={filePreviewQuery.isLoading}
+              isError={filePreviewQuery.isError}
+              error={filePreviewQuery.error}
+              previewHref={previewHref}
+              downloadHref={downloadHref}
+              workspaceRoot={props.workspaceRoot}
+              onOpenWorkspacePath={handleOpenWorkspacePath}
+              emptyStateTitle="파일을 선택하면 미리보기가 열립니다"
+              emptyStateDescription="워크스페이스 파일을 골라 내용을 확인할 수 있습니다."
+              className="h-full"
+            />
           </div>
         </DialogContent>
       </Dialog>

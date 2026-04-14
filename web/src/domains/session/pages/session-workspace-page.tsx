@@ -34,6 +34,7 @@ import {
   serviceTierLabel,
 } from "@/domains/codex/lib/runtime-model-options";
 import { PageState } from "@/shared/components/page-state";
+import { WorkspaceAwareMarkdownLink } from "@/shared/components/workspace-aware-markdown-link";
 import type {
   AgentRunRecord,
   RuntimeEvent,
@@ -100,6 +101,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
+import {
+  extractWorkspaceRelativeArtifactPath,
+  inferWorkspacePathKind,
+} from "@/shared/lib/workspace-link-target";
 import { Folder, File, Share2, Square, Send, Check, X, Pencil, ArrowUpFromLine, Archive, PanelRightOpen, PanelRightClose, BookOpen, LockKeyhole, RotateCcw, ChevronDown } from "lucide-react";
 
 type LiveRunStatus = "idle" | "sending" | "streaming" | "completed" | "failed" | "cancelled";
@@ -438,7 +443,12 @@ function resolveInlineWorkspacePath(
 function AssistantSection(props: {
   section: AssistantTranscriptSection;
   runId: string | null;
+  workspaceRoot: string;
   onOpenWorkspacePath: (path: string, pathKind: WorkspacePathKind) => void;
+  onPreviewArtifact?: (
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ) => boolean | Promise<boolean>;
 }) {
   const {
     visibleArtifacts: artifacts,
@@ -496,14 +506,14 @@ function AssistantSection(props: {
                 </blockquote>
               ),
               a: ({ children, href }) => (
-                <a
+                <WorkspaceAwareMarkdownLink
                   href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-medium text-secondary-foreground underline decoration-foreground/50 underline-offset-3 transition hover:text-secondary-foreground"
+                  workspaceRoot={props.workspaceRoot}
+                  onOpenWorkspacePath={props.onOpenWorkspacePath}
+                  className="inline border-0 bg-transparent p-0 font-medium text-secondary-foreground underline decoration-foreground/50 underline-offset-3 transition hover:text-secondary-foreground"
                 >
                   {children}
-                </a>
+                </WorkspaceAwareMarkdownLink>
               ),
               hr: () => <hr className="my-4 border-border" />,
               pre: ({ children }) => <>{children}</>,
@@ -595,6 +605,11 @@ function AssistantSection(props: {
               runId={props.runId}
               showInspectLink={false}
               variant="compact"
+              onPreview={
+                props.onPreviewArtifact
+                  ? () => props.onPreviewArtifact?.(props.runId, artifact) ?? false
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -608,7 +623,12 @@ function AssistantMessageBubble(props: {
   sections: AssistantTranscriptSection[];
   pending?: boolean;
   elapsedLabel?: string | null;
+  workspaceRoot: string;
   onOpenWorkspacePath: (path: string, pathKind: WorkspacePathKind) => void;
+  onPreviewArtifact?: (
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ) => boolean | Promise<boolean>;
 }) {
   if (props.sections.length === 0) {
     return null;
@@ -647,7 +667,9 @@ function AssistantMessageBubble(props: {
             <AssistantSection
               section={section}
               runId={props.runId}
+              workspaceRoot={props.workspaceRoot}
               onOpenWorkspacePath={props.onOpenWorkspacePath}
+              onPreviewArtifact={props.onPreviewArtifact}
             />
           </div>
         ))}
@@ -2060,6 +2082,63 @@ export function SessionWorkspacePage() {
     focusWorkspacePath(normalizedPath, pathKind === "directory" ? "directory" : "file");
   }
 
+  async function handleOpenWorkspaceArtifact(
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ): Promise<boolean> {
+    const directPath = artifact.workspaceRelativePath?.trim();
+    if (directPath) {
+      await handleOpenWorkspacePath(directPath, inferWorkspacePathKind(directPath));
+      return true;
+    }
+
+    if (!runId || !artifact.role.startsWith("workspace-")) {
+      return false;
+    }
+
+    let run: AgentRunRecord | null = transcriptRunsById[runId] ?? null;
+    if (!run) {
+      try {
+        run = await agentEngineClient.getRun(runId);
+      } catch {
+        run = null;
+      }
+    }
+
+    if (!run) {
+      if (!artifact.previewable) {
+        toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+        return true;
+      }
+      return false;
+    }
+
+    try {
+      const result = await agentEngineClient.getRunResult(runId);
+      const artifactRef = result.artifactRefs.find((entry) => entry.role === artifact.role);
+      const workspacePath = artifactRef
+        ? extractWorkspaceRelativeArtifactPath(artifactRef.path, run.artifactsDir)
+        : null;
+
+      if (!workspacePath) {
+        if (!artifact.previewable) {
+          toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+          return true;
+        }
+        return false;
+      }
+
+      await handleOpenWorkspacePath(workspacePath, inferWorkspacePathKind(workspacePath));
+      return true;
+    } catch {
+      if (!artifact.previewable) {
+        toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+        return true;
+      }
+      return false;
+    }
+  }
+
   const harnessSkills = (agentSkillsQuery.data?.entries ?? [])
     .filter((entry) => entry.kind === "directory")
     .map((entry) => ({
@@ -2115,7 +2194,7 @@ export function SessionWorkspacePage() {
       className={cn(
         "grid h-full max-h-full min-h-0 gap-4 overflow-hidden",
         showWorkspacePanel
-          ? "items-stretch lg:grid-cols-[minmax(0,1fr)_22rem]"
+          ? "items-stretch lg:grid-cols-workspace"
           : "grid-cols-1"
       )}
     >
@@ -2297,7 +2376,9 @@ export function SessionWorkspacePage() {
                   runId={entry.runId}
                   sections={entry.sections}
                   elapsedLabel={elapsedLabelForRun(entry.runId)}
+                  workspaceRoot={session.workspaceRoot}
                   onOpenWorkspacePath={handleOpenWorkspacePath}
+                  onPreviewArtifact={handleOpenWorkspaceArtifact}
                 />
               </div>
             ) : entry.message.role === "assistant" ? (
@@ -2315,7 +2396,9 @@ export function SessionWorkspacePage() {
                     },
                   ]}
                   elapsedLabel={elapsedLabelForRun(entry.message.runId)}
+                  workspaceRoot={session.workspaceRoot}
                   onOpenWorkspacePath={handleOpenWorkspacePath}
+                  onPreviewArtifact={handleOpenWorkspaceArtifact}
                 />
               </div>
             ) : (
@@ -2357,7 +2440,9 @@ export function SessionWorkspacePage() {
                 runId={activeRun?.id ?? null}
                 sections={liveAssistantSections}
                 elapsedLabel={liveElapsedLabel}
+                workspaceRoot={session.workspaceRoot}
                 onOpenWorkspacePath={handleOpenWorkspacePath}
+                onPreviewArtifact={handleOpenWorkspaceArtifact}
               />
             </div>
           ) : null}
@@ -2393,9 +2478,9 @@ export function SessionWorkspacePage() {
       </div>
 
       {showWorkspacePanel ? (
-        <Card className="flex min-h-0 max-h-full min-w-0 flex-col gap-0 overflow-hidden bg-card p-4 lg:h-full">
+        <Card className="flex min-h-0 max-h-full min-w-0 flex-col gap-0 overflow-hidden bg-card p-0 lg:h-full">
           <Tabs defaultValue="workspace" className="flex min-h-0 flex-1 flex-col gap-0">
-            <div className="shrink-0 border-b border-border/70 pb-4">
+            <div className="shrink-0 border-b border-border/70 px-4 py-3">
               <TabsList className="rounded-full bg-muted p-1">
                 <TabsTrigger value="workspace" className="text-xs">
                   작업 환경
@@ -2406,7 +2491,7 @@ export function SessionWorkspacePage() {
               </TabsList>
             </div>
 
-            <TabsContent value="workspace" className="min-h-0 flex-1 pt-4">
+            <TabsContent value="workspace" className="min-h-0 flex-1 px-4 py-4">
               <AgentWorkspaceBrowserPanel
                 agentId={agentId}
                 workspaceRoot={session.workspaceRoot}
@@ -2418,7 +2503,7 @@ export function SessionWorkspacePage() {
               />
             </TabsContent>
 
-            <TabsContent value="harness" className="min-h-0 flex-1 overflow-y-auto pt-4 pr-1">
+            <TabsContent value="harness" className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <SessionSkillsPanel
                 skills={harnessSkills}
                 isLoading={agentSkillsQuery.isLoading}

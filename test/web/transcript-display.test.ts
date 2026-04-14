@@ -160,6 +160,18 @@ test("splitTextWithWorkspacePaths keeps unsupported or unsafe tokens as plain te
       },
     ]
   );
+  assert.deepEqual(
+    splitTextWithWorkspacePaths(
+      "크롬 호환 쪽으로 맞추려면 H.264/AAC 또는 WebM(VP8/VP9) 쪽이 현실적입니다."
+    ),
+    [
+      {
+        kind: "text",
+        value:
+          "크롬 호환 쪽으로 맞추려면 H.264/AAC 또는 WebM(VP8/VP9) 쪽이 현실적입니다.",
+      },
+    ]
+  );
 });
 
 test("splitTextWithWorkspacePaths keeps useful root dotpaths clickable without forcing file-vs-directory", () => {

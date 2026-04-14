@@ -229,6 +229,7 @@ export function ArtifactPreviewCard(props: {
   showInspectLink?: boolean;
   variant?: "default" | "compact";
   className?: string;
+  onPreview?: () => boolean | Promise<boolean>;
 }) {
   const showInspectLink = props.showInspectLink ?? true;
   const variant = props.variant ?? "default";
@@ -242,7 +243,24 @@ export function ArtifactPreviewCard(props: {
     props.artifact.presentation === "chart" || previewHref !== null;
   const [previewOpen, setPreviewOpen] = React.useState(false);
 
+  const handleCompactPreview = React.useCallback(() => {
+    void (async () => {
+      if (props.onPreview) {
+        const handled = await props.onPreview();
+        if (handled) {
+          return;
+        }
+      }
+
+      if (supportsDialogPreview) {
+        setPreviewOpen(true);
+      }
+    })();
+  }, [props.onPreview, supportsDialogPreview]);
+
   if (variant === "compact") {
+    const supportsCompactPreview = Boolean(props.onPreview) || supportsDialogPreview;
+
     return (
       <>
         <article
@@ -269,8 +287,8 @@ export function ArtifactPreviewCard(props: {
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            {supportsDialogPreview ? (
-              <ArtifactActionIconButton label="미리보기" onClick={() => setPreviewOpen(true)}>
+            {supportsCompactPreview ? (
+              <ArtifactActionIconButton label="미리보기" onClick={handleCompactPreview}>
                 <Eye size={14} />
               </ArtifactActionIconButton>
             ) : null}
