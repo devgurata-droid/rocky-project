@@ -1,0 +1,13 @@
+.venv
+.env
+__pycache__/
+*.pyc
+node_modules/
+.runtime/
+dist/
+web/node_modules/
+web/dist/
+web/.vite/
+web/.env
+web/.venv
+.codex/

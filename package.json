@@ -1,0 +1,36 @@
+{
+  "name": "rocky-project",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "rocky-project": "./dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc --project tsconfig.json && mkdir -p dist/test/runtime && cp -R test/runtime/fixtures dist/test/runtime/fixtures",
+    "dev:stack": "./scripts/run-dev-stack.sh",
+    "agent": "npm run build --silent && node dist/src/cli.js",
+    "test": "npm run build --silent && node --test dist/test/agents/*.test.js dist/test/api/*.test.js dist/test/runtime/*.test.js dist/test/web/*.test.js",
+    "test:e2e": "npm run build --silent && node --test dist/test/api/cli-http-workflow.e2e.test.js",
+    "test:e2e:live": "npm run build --silent && node dist/scripts/live-e2e.js",
+    "runtime:probe": "bash scripts/runtime-capability-probe.sh",
+    "benchmark:latency": "npm run build --silent && node dist/scripts/session-latency-benchmark.js",
+    "benchmark:interactive-kept-open": "npm run build --silent && node dist/scripts/interactive-kept-open-vs-service.js",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "smoke": "npm run build --silent && node dist/scripts/manual-smoke.js",
+    "web:dev": "npm --prefix web run dev --",
+    "web:build": "npm --prefix web run build",
+    "web:typecheck": "npm --prefix web run typecheck",
+    "web:test:e2e": "npm --prefix web run test:e2e"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fastify": "^5.8.2"
+  }
+}

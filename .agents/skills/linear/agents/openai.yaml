@@ -1,0 +1,4 @@
+interface:
+  display_name: "Linear"
+  short_description: "Track ROC issues and sync them with code and PR work"
+  default_prompt: "Use $linear to create or update Rocky-project Linear issues, keep ROC issue descriptions and comments current, and attach branch or PR context after code work."

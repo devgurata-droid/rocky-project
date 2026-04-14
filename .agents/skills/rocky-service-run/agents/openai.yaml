@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rocky Service Run"
+  short_description: "Start or expose the local Rocky backend and web UI"
+  default_prompt: "Use $rocky-service-run to start the local Rocky backend service, expose backend or frontend on the network when needed, and verify the local HTTP endpoints."

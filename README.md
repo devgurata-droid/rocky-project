@@ -1,0 +1,54 @@
+# rocky-project
+
+`rocky-project`는 Rocky 운영 콘솔과 agent-engine 백엔드를 함께 담은 저장소입니다. Codex 기반 에이전트 실행, 세션/런 관리, 상태 저장, 그리고 웹 UI 개발 흐름을 한곳에서 다룹니다.
+
+## Requirements
+
+- Node.js 22 이상
+- npm
+- Codex CLI 사용 시 로컬 인증 완료
+
+## Quick Start
+
+```bash
+npm install
+npm run build
+npm test
+```
+
+백엔드 실행:
+
+```bash
+npm run agent -- serve --host 127.0.0.1 --port 3000
+```
+
+웹 UI 실행:
+
+```bash
+npm --prefix web install
+npm run web:dev
+```
+
+## Common Commands
+
+```bash
+npm run typecheck
+npm run test:e2e
+npm run smoke -- --prompt "Reply with exactly OK"
+npm run runtime:probe -- --provider codex --write
+```
+
+## Repository Layout
+
+- `src/`: backend CLI, runtime, API, session, task implementation
+- `web/`: Rocky 웹 UI
+- `scripts/`: local automation and service helper scripts
+- `test/`: backend and integration tests
+- `.agents/skills/`: local Codex workflow skills
+- `.runtime/`: local runtime state and smoke artifacts
+
+## Notes
+
+- 기본 상태 루트는 `.runtime/agent-engine`입니다.
+- 이 저장소는 문서 폴더 대신 루트 `README.md`, 소스 코드, 테스트, 그리고 `.agents/skills/`를 기준으로 운영합니다.
+- 공개 브랜치로 정리할 때는 불필요한 로컬 산출물(`dist/`, `node_modules/`, `.runtime/`, `.env`)을 포함하지 않도록 확인해야 합니다.

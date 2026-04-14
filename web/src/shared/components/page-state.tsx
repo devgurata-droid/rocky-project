@@ -1,0 +1,19 @@
+import { Card } from "@/shared/ui/card";
+
+export function PageState(props: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex min-h-80 items-center justify-center">
+      <Card className="max-w-xl gap-0 bg-muted/80 px-8 py-10 text-center">
+        <p className="text-label-md uppercase  text-muted-foreground">{props.eyebrow}</p>
+        <h3 className="mt-4 font-heading text-headline-lg font-semibold text-foreground">
+          {props.title}
+        </h3>
+        <p className="mt-4 text-body-lg leading-7 text-muted-foreground">{props.description}</p>
+      </Card>
+    </div>
+  );
+}

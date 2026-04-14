@@ -1,0 +1,4 @@
+interface:
+  display_name: "MCP On Demand"
+  short_description: "Enable only the MCP providers needed for the next Codex session"
+  default_prompt: "Use $mcp-on-demand to keep MCP integrations disabled by default, enable only the providers needed for the next task, and remind me to restart Codex after the config change."

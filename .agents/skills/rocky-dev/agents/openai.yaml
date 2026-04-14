@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rocky Dev"
+  short_description: "Build and validate the Rocky backend and runtime"
+  default_prompt: "Use $rocky-dev to implement the next Rocky runtime or backend slice in this repository, keep the runtime boundaries clean, and run the required test and smoke checks."
