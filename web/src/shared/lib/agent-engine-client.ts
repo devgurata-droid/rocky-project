@@ -541,6 +541,7 @@ export interface AgentSessionArtifactManifestEntry {
   kind: "file";
   role: string;
   name: string;
+  workspaceRelativePath?: string | null;
   contentType: string;
   presentation: "file" | "image" | "chart";
   size: number | null;
@@ -623,6 +624,7 @@ export interface RunArtifactRecord {
   kind: string;
   role: string;
   name: string;
+  workspaceRelativePath?: string | null;
   contentType: string;
   presentation: "file" | "image" | "chart";
   size: number | null;

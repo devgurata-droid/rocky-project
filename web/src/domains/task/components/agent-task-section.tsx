@@ -101,7 +101,7 @@ export function AgentTaskSection({ agentId }: { agentId: string }) {
       description: `${task.name} 실행이 시작되었습니다.`,
       action: taskRun.runId
         ? {
-            label: "검사기 열기",
+            label: "대화 상세",
             onClick: () => {
               window.location.href = `/runs/${taskRun.runId}`;
             },

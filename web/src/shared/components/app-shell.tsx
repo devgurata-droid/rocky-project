@@ -34,6 +34,7 @@ function usesBoundedCanvas(pathname: string): boolean {
 export function AppShell() {
   const location = useLocation();
   const boundedCanvas = usesBoundedCanvas(location.pathname);
+  const compactRoute = isCompactRoute(location.pathname);
 
   return (
     <SidebarProvider>
@@ -72,7 +73,10 @@ export function AppShell() {
           className={cn(
             "min-h-0 flex-1",
             boundedCanvas
-              ? "box-border flex h-[calc(100svh-3rem)] max-h-[calc(100svh-3rem)] min-h-0 flex-col overflow-hidden p-8 md:p-10"
+              ? cn(
+                "box-border flex h-[calc(100svh-3rem)] max-h-[calc(100svh-3rem)] min-h-0 flex-col overflow-hidden",
+                compactRoute ? "p-5 md:p-6" : "p-8 md:p-10",
+              )
               : "overflow-y-auto p-8 md:p-10",
           )}
         >

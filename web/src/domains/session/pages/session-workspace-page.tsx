@@ -34,6 +34,7 @@ import {
   serviceTierLabel,
 } from "@/domains/codex/lib/runtime-model-options";
 import { PageState } from "@/shared/components/page-state";
+import { WorkspaceAwareMarkdownLink } from "@/shared/components/workspace-aware-markdown-link";
 import type {
   AgentRunRecord,
   RuntimeEvent,
@@ -100,7 +101,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Textarea } from "@/shared/ui/textarea";
 import { Card } from "@/shared/ui/card";
 import { cn } from "@/shared/lib/utils";
-import { Folder, File, Share2, Square, Send, Check, X, Pencil, ArrowUpFromLine, Archive, PanelRightOpen, PanelRightClose, BookOpen, LockKeyhole, RotateCcw, ChevronDown } from "lucide-react";
+import {
+  extractWorkspaceRelativeArtifactPath,
+  inferWorkspacePathKind,
+} from "@/shared/lib/workspace-link-target";
+import { Folder, File, Share2, Square, Send, Check, X, Pencil, ArrowUpFromLine, Archive, PanelRightOpen, PanelRightClose, BookOpen, LockKeyhole, RotateCcw, ChevronDown, MessageCircleMore } from "lucide-react";
 
 type LiveRunStatus = "idle" | "sending" | "streaming" | "completed" | "failed" | "cancelled";
 const MAX_COMPOSER_HEIGHT_PX = 220;
@@ -187,11 +192,54 @@ const SESSION_ICON_BUTTON_CLASS =
 
 const SESSION_META_PILL_CLASS =
   "inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-semibold uppercase tracking-normal text-muted-foreground";
+const CHAT_MESSAGE_META_ROW_CLASS =
+  "flex flex-wrap items-center gap-2 text-label-sm font-semibold uppercase tracking-normal leading-none";
+const CHAT_MESSAGE_META_BADGE_CLASS =
+  "rounded-full px-2 py-1 text-label-sm font-semibold leading-none";
+const CHAT_MESSAGE_ROLE_LABEL_CLASS = "text-label-sm font-semibold leading-none";
 
 function inspectorLinkTone(role: "assistant" | "user" | "system"): string {
   return role !== "user"
     ? "border-border/70 bg-card/75 text-foreground hover:bg-card"
     : "border-accent-foreground/25 bg-accent-foreground/10 text-accent-foreground hover:bg-accent-foreground/15";
+}
+
+function inspectorIconTone(role: "assistant" | "user" | "system"): string {
+  return role !== "user"
+    ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+    : "text-accent-foreground/75 hover:bg-accent-foreground/10 hover:text-accent-foreground";
+}
+
+function messageRoleLabel(role: "assistant" | "user" | "system"): string {
+  if (role === "assistant") {
+    return "어시스턴트";
+  }
+
+  if (role === "user") {
+    return "사용자";
+  }
+
+  return "시스템";
+}
+
+function RunInspectorIconLink(props: {
+  runId: string;
+  role: "assistant" | "user" | "system";
+}) {
+  return (
+    <Link
+      to={`/runs/${props.runId}`}
+      aria-label="대화 상세 보기"
+      title="대화 상세 보기"
+      className={cn(
+        "inline-flex h-7 w-7 items-center justify-center rounded-full leading-none no-underline transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-1",
+        inspectorIconTone(props.role),
+        "visited:text-inherit"
+      )}
+    >
+      <MessageCircleMore size={14} />
+    </Link>
+  );
 }
 
 function eventString(data: Record<string, unknown>, key: string): string | null {
@@ -257,7 +305,7 @@ function PlainMessageViewer(props: {
       : [];
 
   return (
-    <div className="mt-2 space-y-2.5">
+    <div className="mt-2 space-y-2.5 text-body-md leading-7">
       {blocks.map((block, index) => {
         if (block.type === "code") {
           return (
@@ -313,7 +361,7 @@ function PlainMessageViewer(props: {
         return (
           <p
             key={`text-${index}`}
-            className="whitespace-pre-wrap text-body-md leading-6 text-inherit"
+            className="whitespace-pre-wrap text-body-md leading-7 text-inherit"
           >
             {block.text}
           </p>
@@ -438,7 +486,12 @@ function resolveInlineWorkspacePath(
 function AssistantSection(props: {
   section: AssistantTranscriptSection;
   runId: string | null;
+  workspaceRoot: string;
   onOpenWorkspacePath: (path: string, pathKind: WorkspacePathKind) => void;
+  onPreviewArtifact?: (
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ) => boolean | Promise<boolean>;
 }) {
   const {
     visibleArtifacts: artifacts,
@@ -496,14 +549,14 @@ function AssistantSection(props: {
                 </blockquote>
               ),
               a: ({ children, href }) => (
-                <a
+                <WorkspaceAwareMarkdownLink
                   href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-medium text-secondary-foreground underline decoration-foreground/50 underline-offset-3 transition hover:text-secondary-foreground"
+                  workspaceRoot={props.workspaceRoot}
+                  onOpenWorkspacePath={props.onOpenWorkspacePath}
+                  className="inline border-0 bg-transparent p-0 font-medium text-secondary-foreground underline decoration-foreground/50 underline-offset-3 transition hover:text-secondary-foreground"
                 >
                   {children}
-                </a>
+                </WorkspaceAwareMarkdownLink>
               ),
               hr: () => <hr className="my-4 border-border" />,
               pre: ({ children }) => <>{children}</>,
@@ -595,6 +648,11 @@ function AssistantSection(props: {
               runId={props.runId}
               showInspectLink={false}
               variant="compact"
+              onPreview={
+                props.onPreviewArtifact
+                  ? () => props.onPreviewArtifact?.(props.runId, artifact) ?? false
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -608,7 +666,12 @@ function AssistantMessageBubble(props: {
   sections: AssistantTranscriptSection[];
   pending?: boolean;
   elapsedLabel?: string | null;
+  workspaceRoot: string;
   onOpenWorkspacePath: (path: string, pathKind: WorkspacePathKind) => void;
+  onPreviewArtifact?: (
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ) => boolean | Promise<boolean>;
 }) {
   if (props.sections.length === 0) {
     return null;
@@ -616,26 +679,14 @@ function AssistantMessageBubble(props: {
 
   return (
     <Card className="max-w-full gap-0 break-words bg-card/95 px-5 py-4 text-foreground">
-      <div className="flex flex-wrap items-center gap-2 text-label-md uppercase -wide text-muted-foreground">
-        <span>어시스턴트</span>
+      <div className={cn(CHAT_MESSAGE_META_ROW_CLASS, "text-muted-foreground")}>
+        <span className={CHAT_MESSAGE_ROLE_LABEL_CLASS}>{messageRoleLabel("assistant")}</span>
         {props.elapsedLabel ? (
-          <Badge className="rounded-full bg-secondary px-2 py-1 text-label-sm font-semibold text-muted-foreground">
+          <Badge className={cn(CHAT_MESSAGE_META_BADGE_CLASS, "bg-secondary text-muted-foreground")}>
             경과 {props.elapsedLabel}
           </Badge>
         ) : null}
-        {props.runId ? (
-          <Link
-            to={`/runs/${props.runId}`}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-label-sm font-semibold leading-none no-underline transition whitespace-nowrap",
-              inspectorLinkTone("assistant"),
-              "visited:text-inherit"
-            )}
-          >
-            <ArrowUpFromLine size={11} />
-            검사기 열기
-          </Link>
-        ) : null}
+        {props.runId ? <RunInspectorIconLink runId={props.runId} role="assistant" /> : null}
       </div>
 
       <div className="mt-3 space-y-4">
@@ -647,7 +698,9 @@ function AssistantMessageBubble(props: {
             <AssistantSection
               section={section}
               runId={props.runId}
+              workspaceRoot={props.workspaceRoot}
               onOpenWorkspacePath={props.onOpenWorkspacePath}
+              onPreviewArtifact={props.onPreviewArtifact}
             />
           </div>
         ))}
@@ -687,12 +740,14 @@ function MessageBubble(props: {
           : "border-accent/85 bg-accent text-accent-foreground shadow-sm",
       )}
     >
-      <div className="flex flex-wrap items-center gap-2 text-label-md uppercase -wide opacity-60">
-        <span>{props.message.role}</span>
+      <div className={cn(CHAT_MESSAGE_META_ROW_CLASS, "opacity-60")}>
+        <span className={CHAT_MESSAGE_ROLE_LABEL_CLASS}>
+          {messageRoleLabel(props.message.role)}
+        </span>
         {props.pending ? (
           <Badge
             className={cn(
-              "rounded-full px-2 py-1 text-label-sm",
+              CHAT_MESSAGE_META_BADGE_CLASS,
               props.message.role === "assistant"
                 ? "bg-foreground/10 text-muted-foreground"
                 : "bg-card/65 text-muted-foreground",
@@ -707,7 +762,7 @@ function MessageBubble(props: {
             variant="ghost"
             size="xs"
             className={cn(
-              "h-auto rounded-full border px-2 py-1 text-label-sm font-semibold leading-none",
+              `h-auto ${CHAT_MESSAGE_META_BADGE_CLASS} border`,
               inspectorLinkTone(props.message.role),
             )}
             disabled={props.rerunDisabled}
@@ -720,19 +775,7 @@ function MessageBubble(props: {
             다시 실행
           </Button>
         ) : null}
-        {runId ? (
-          <Link
-            to={`/runs/${runId}`}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-label-sm font-semibold leading-none no-underline transition whitespace-nowrap",
-              inspectorLinkTone(props.message.role),
-              "visited:text-inherit"
-            )}
-          >
-            <ArrowUpFromLine size={11} />
-            검사기 열기
-          </Link>
-        ) : null}
+        {runId ? <RunInspectorIconLink runId={runId} role={props.message.role} /> : null}
       </div>
       <PlainMessageViewer message={props.message} role={props.message.role} />
     </div>
@@ -773,12 +816,32 @@ function SessionComposer(props: {
     props.selectedModelOption?.provider ?? selectedRuntimeOption?.provider ?? "codex";
   const composerModelLabel = props.selectedModelOption?.label
     ?? (props.modelOptions.length > 0 ? "모델 선택" : runtimeShortLabel(props.selectedRuntime));
+  const reasoningLabel = props.selectedReasoningEffort
+    ? reasoningEffortLabel[
+      props.selectedReasoningEffort as keyof typeof reasoningEffortLabel
+    ] ?? props.selectedReasoningEffort
+    : "기본";
+  const serviceTierLabelText =
+    props.selectedRuntime === "ollama" || !props.selectedModelOption?.supportedServiceTiers.length
+      ? null
+      : serviceTierLabel[
+        (props.selectedServiceTier ||
+          DEFAULT_SERVICE_TIER_SELECTION) as keyof typeof serviceTierLabel
+      ];
   const composerRuntimeSummary =
     props.selectedRuntime === "ollama"
       ? `${runtimeShortLabel(props.selectedRuntime)} · ${ollamaLaunchTargetLabel(
         props.selectedOllamaLaunchTarget
       )}`
-      : runtimeShortLabel(props.selectedRuntime);
+      : [
+        runtimeShortLabel(props.selectedRuntime),
+        reasoningLabel,
+        serviceTierLabelText && serviceTierLabelText !== serviceTierLabel.default
+          ? serviceTierLabelText
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
   useEffect(() => {
     const textarea = composerRef.current;
@@ -1055,7 +1118,7 @@ function SessionComposer(props: {
 
               {props.selectedModelOption?.supportedServiceTiers.length ? (
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-medium text-muted-foreground">속도</div>
+                  <div className="text-[11px] font-medium text-muted-foreground">응답 속도</div>
                   <Select
                     value={props.selectedServiceTier}
                     onValueChange={props.onServiceTierChange}
@@ -2060,6 +2123,63 @@ export function SessionWorkspacePage() {
     focusWorkspacePath(normalizedPath, pathKind === "directory" ? "directory" : "file");
   }
 
+  async function handleOpenWorkspaceArtifact(
+    runId: string | null,
+    artifact: AgentSessionArtifactManifestEntry
+  ): Promise<boolean> {
+    const directPath = artifact.workspaceRelativePath?.trim();
+    if (directPath) {
+      await handleOpenWorkspacePath(directPath, inferWorkspacePathKind(directPath));
+      return true;
+    }
+
+    if (!runId || !artifact.role.startsWith("workspace-")) {
+      return false;
+    }
+
+    let run: AgentRunRecord | null = transcriptRunsById[runId] ?? null;
+    if (!run) {
+      try {
+        run = await agentEngineClient.getRun(runId);
+      } catch {
+        run = null;
+      }
+    }
+
+    if (!run) {
+      if (!artifact.previewable) {
+        toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+        return true;
+      }
+      return false;
+    }
+
+    try {
+      const result = await agentEngineClient.getRunResult(runId);
+      const artifactRef = result.artifactRefs.find((entry) => entry.role === artifact.role);
+      const workspacePath = artifactRef
+        ? extractWorkspaceRelativeArtifactPath(artifactRef.path, run.artifactsDir)
+        : null;
+
+      if (!workspacePath) {
+        if (!artifact.previewable) {
+          toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+          return true;
+        }
+        return false;
+      }
+
+      await handleOpenWorkspacePath(workspacePath, inferWorkspacePathKind(workspacePath));
+      return true;
+    } catch {
+      if (!artifact.previewable) {
+        toast.error("작업 환경 파일 미리보기를 열 수 없습니다.");
+        return true;
+      }
+      return false;
+    }
+  }
+
   const harnessSkills = (agentSkillsQuery.data?.entries ?? [])
     .filter((entry) => entry.kind === "directory")
     .map((entry) => ({
@@ -2115,7 +2235,7 @@ export function SessionWorkspacePage() {
       className={cn(
         "grid h-full max-h-full min-h-0 gap-4 overflow-hidden",
         showWorkspacePanel
-          ? "items-stretch lg:grid-cols-[minmax(0,1fr)_22rem]"
+          ? "items-stretch lg:grid-cols-workspace"
           : "grid-cols-1"
       )}
     >
@@ -2154,7 +2274,7 @@ export function SessionWorkspacePage() {
                               ? "!text-secondary-foreground visited:!text-secondary-foreground"
                               : "!text-muted-foreground visited:!text-muted-foreground",
                           )}
-                          title="최신 실행 검사기 열기"
+                          title="최근 대화 상세 열기"
                         >
                           {runIsActive ? (
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground" />
@@ -2297,7 +2417,9 @@ export function SessionWorkspacePage() {
                   runId={entry.runId}
                   sections={entry.sections}
                   elapsedLabel={elapsedLabelForRun(entry.runId)}
+                  workspaceRoot={session.workspaceRoot}
                   onOpenWorkspacePath={handleOpenWorkspacePath}
+                  onPreviewArtifact={handleOpenWorkspaceArtifact}
                 />
               </div>
             ) : entry.message.role === "assistant" ? (
@@ -2315,7 +2437,9 @@ export function SessionWorkspacePage() {
                     },
                   ]}
                   elapsedLabel={elapsedLabelForRun(entry.message.runId)}
+                  workspaceRoot={session.workspaceRoot}
                   onOpenWorkspacePath={handleOpenWorkspacePath}
+                  onPreviewArtifact={handleOpenWorkspaceArtifact}
                 />
               </div>
             ) : (
@@ -2357,7 +2481,9 @@ export function SessionWorkspacePage() {
                 runId={activeRun?.id ?? null}
                 sections={liveAssistantSections}
                 elapsedLabel={liveElapsedLabel}
+                workspaceRoot={session.workspaceRoot}
                 onOpenWorkspacePath={handleOpenWorkspacePath}
+                onPreviewArtifact={handleOpenWorkspaceArtifact}
               />
             </div>
           ) : null}
@@ -2393,9 +2519,9 @@ export function SessionWorkspacePage() {
       </div>
 
       {showWorkspacePanel ? (
-        <Card className="flex min-h-0 max-h-full min-w-0 flex-col gap-0 overflow-hidden bg-card p-4 lg:h-full">
+        <Card className="flex min-h-0 max-h-full min-w-0 flex-col gap-0 overflow-hidden bg-card p-0 lg:h-full">
           <Tabs defaultValue="workspace" className="flex min-h-0 flex-1 flex-col gap-0">
-            <div className="shrink-0 border-b border-border/70 pb-4">
+            <div className="shrink-0 border-b border-border/70 px-4 py-3">
               <TabsList className="rounded-full bg-muted p-1">
                 <TabsTrigger value="workspace" className="text-xs">
                   작업 환경
@@ -2406,7 +2532,7 @@ export function SessionWorkspacePage() {
               </TabsList>
             </div>
 
-            <TabsContent value="workspace" className="min-h-0 flex-1 pt-4">
+            <TabsContent value="workspace" className="min-h-0 flex-1 px-4 py-4">
               <AgentWorkspaceBrowserPanel
                 agentId={agentId}
                 workspaceRoot={session.workspaceRoot}
@@ -2418,7 +2544,7 @@ export function SessionWorkspacePage() {
               />
             </TabsContent>
 
-            <TabsContent value="harness" className="min-h-0 flex-1 overflow-y-auto pt-4 pr-1">
+            <TabsContent value="harness" className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <SessionSkillsPanel
                 skills={harnessSkills}
                 isLoading={agentSkillsQuery.isLoading}
