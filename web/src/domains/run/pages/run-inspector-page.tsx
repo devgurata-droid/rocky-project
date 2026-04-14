@@ -374,8 +374,8 @@ export function RunInspectorPage() {
     return (
       <PageState
         eyebrow="로딩"
-        title="실행 검사 중"
-        description="실행 메타데이터와 최종 결과를 검사기 셸에 로딩 중입니다."
+        title="대화 상세를 불러오는 중입니다"
+        description="실행 메타데이터와 최종 결과를 대화 상세 화면에 불러오고 있습니다."
       />
     );
   }
@@ -396,7 +396,7 @@ export function RunInspectorPage() {
       <PageState
         eyebrow="누락"
         title="실행을 찾을 수 없습니다"
-        description="검사기 셸에는 실제 실행 기록과 최종 결과가 필요합니다."
+        description="대화 상세 화면에는 실제 실행 기록과 최종 결과가 필요합니다."
       />
     );
   }
@@ -422,11 +422,11 @@ export function RunInspectorPage() {
           <div className="min-w-0">
             <p className="text-label-md uppercase  text-primary-foreground/60">{run.id}</p>
             <h3 className="mt-3 font-heading text-headline-lg font-semibold leading-tight">
-              실행 검사기
+              대화 상세
             </h3>
             <p className="mt-3 max-w-3xl text-body-md leading-7 text-primary-foreground/80">
-              경고, stderr, 아티팩트, 정규화된 이벤트 흐름에 대한 세션 기반 실행 진단입니다.
-              트랜스크립트 항목, 실시간 상태 카드, 또는 직접 딥링크에서 열 수 있습니다.
+              메시지 흐름, 경고, stderr, 아티팩트를 한 화면에서 확인합니다.
+              세션 트랜스크립트, 실시간 상태 카드, 또는 직접 링크에서 열 수 있습니다.
             </p>
           </div>
 

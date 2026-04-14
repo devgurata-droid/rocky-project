@@ -85,7 +85,7 @@ export function HeaderBreadcrumb() {
   const pathname = location.pathname;
   let title = "에이전트 엔진";
   if (pathname === "/agents/archived") title = "보관함";
-  else if (pathname.startsWith("/runs/")) title = "실행 검사기";
+  else if (pathname.startsWith("/runs/")) title = "대화 상세";
   else if (pathname.startsWith("/account")) title = "계정 설정";
   else if (pathname.startsWith("/agents")) title = "에이전트";
 

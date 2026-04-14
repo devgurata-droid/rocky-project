@@ -125,7 +125,7 @@ export function TaskResultPreview(props: {
             className="inline-flex items-center gap-1 rounded-full border border-border/80 px-2.5 py-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
           >
             <ArrowUpFromLine size={12} />
-            실행 검사기
+            대화 상세
           </Link>
         ) : null}
       </div>
