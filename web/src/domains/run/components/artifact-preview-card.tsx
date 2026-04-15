@@ -347,7 +347,7 @@ export function ArtifactPreviewCard(props: {
                 </div>
               </DialogHeader>
 
-              <div className="min-h-0 flex-1 overflow-auto bg-muted/40 p-6">
+              <div className="min-h-0 flex-1 custom-scrollbar overflow-auto bg-muted/40 p-6">
                 {props.artifact.presentation === "image" && previewHref ? (
                   <div className="flex h-full min-h-[18rem] items-center justify-center rounded-2xl border border-border bg-card p-4">
                     <img

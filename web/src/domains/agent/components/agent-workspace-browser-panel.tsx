@@ -285,7 +285,7 @@ function CodePreviewPanel(props: {
   const lines = props.text.split(/\r?\n/);
 
   return (
-    <div className="h-full overflow-auto bg-slate-950 text-slate-100">
+    <div className="h-full custom-scrollbar overflow-auto bg-slate-950 text-slate-100">
       <div
         className={cn(
           "sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-slate-950/95 backdrop-blur",
@@ -324,7 +324,7 @@ function TextPreviewPanel(props: {
           {props.record.truncated ? " · 잘림" : ""}
         </span>
       </div>
-      <div className={cn("min-h-0 flex-1 overflow-auto", props.compact ? "px-3 py-3" : "px-4 py-4")}>
+      <div className={cn("min-h-0 flex-1 custom-scrollbar overflow-auto", props.compact ? "px-3 py-3" : "px-4 py-4")}>
         <pre className="whitespace-pre-wrap break-words font-mono text-body-sm leading-6 text-foreground">
           {props.text}
         </pre>
@@ -359,7 +359,7 @@ function MarkdownPreviewPanel(props: {
 
       <TabsContent
         value="preview"
-        className={cn("min-h-0 flex-1 overflow-auto", props.compact ? "px-3 py-3" : "px-5 py-5")}
+        className={cn("min-h-0 flex-1 custom-scrollbar overflow-auto", props.compact ? "px-3 py-3" : "px-5 py-5")}
       >
         <article className="space-y-4 text-body-md leading-7 text-foreground">
           <ReactMarkdown
@@ -405,7 +405,7 @@ function MarkdownPreviewPanel(props: {
               },
               pre: (props) => (
                 <pre
-                  className="overflow-x-auto rounded-2xl bg-slate-950 px-4 py-4 text-slate-100"
+                  className="custom-scrollbar overflow-x-auto rounded-2xl bg-slate-950 px-4 py-4 text-slate-100"
                   {...props}
                 />
               ),
@@ -524,7 +524,7 @@ function WorkspacePreviewSurface(props: {
       return <TextPreviewPanel record={props.record} text={props.record.text ?? ""} compact={props.compact} />;
     case "image":
       return props.previewHref ? (
-        <div className={cn("flex h-full items-center justify-center overflow-auto bg-secondary/40", props.compact ? "p-1" : "p-4")}>
+        <div className={cn("flex h-full items-center justify-center custom-scrollbar overflow-auto bg-secondary/40", props.compact ? "p-1" : "p-4")}>
           <img
             src={props.previewHref}
             alt={props.record.name}
@@ -871,7 +871,7 @@ export function AgentWorkspaceBrowserPanel(props: {
       ) : (
         <div
           className={cn(
-            "flex h-full flex-col gap-1 overflow-y-auto",
+            "flex h-full flex-col gap-1 custom-scrollbar overflow-y-auto",
             embedded ? "pr-0" : "pr-1",
           )}
         >
@@ -971,7 +971,7 @@ export function AgentWorkspaceBrowserPanel(props: {
 
         {embedded ? (
           <div className="mb-3 flex items-center justify-between gap-3 border-b border-border/70 pb-3">
-            <div className="-mx-1 min-w-0 flex-1 overflow-x-auto px-1">
+            <div className="-mx-1 min-w-0 flex-1 custom-scrollbar overflow-x-auto px-1">
               <div className="flex min-w-max items-center gap-2 text-label-md uppercase text-muted-foreground">
                 <Button
                   variant={currentPath === "" ? "default" : "secondary"}
@@ -1035,7 +1035,7 @@ export function AgentWorkspaceBrowserPanel(props: {
               "rounded-2xl border border-border bg-card px-4 py-4",
             )}
           >
-            <div className="-mx-1 overflow-x-auto pb-1">
+            <div className="-mx-1 custom-scrollbar overflow-x-auto pb-1">
               <div className="flex min-w-max items-center gap-2 px-1 text-label-md uppercase text-muted-foreground">
                 <Button
                   variant={searchPath === "" ? "default" : "secondary"}

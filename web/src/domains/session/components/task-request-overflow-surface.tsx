@@ -136,7 +136,7 @@ export function TaskRequestOverflowSurface({
                 추가 진행 중 작업 {requests.length}개를 바로 열 수 있습니다.
               </DrawerDescription>
             </DrawerHeader>
-            <div className="space-y-2 overflow-y-auto px-4 pb-4">
+            <div className="space-y-2 custom-scrollbar overflow-y-auto px-4 pb-4">
               <RequestList
                 agentId={agentId}
                 requests={requests}
@@ -163,7 +163,7 @@ export function TaskRequestOverflowSurface({
             추가 진행 중 작업 {requests.length}개를 바로 열 수 있습니다.
           </PopoverDescription>
         </PopoverHeader>
-        <div className="max-h-[22rem] overflow-y-auto px-3 py-3">
+        <div className="max-h-[22rem] custom-scrollbar overflow-y-auto px-3 py-3">
           <RequestList
             agentId={agentId}
             requests={requests}

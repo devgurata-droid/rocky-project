@@ -33,7 +33,7 @@ export function TaskResultDialog(props: {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="overflow-y-auto px-6 py-5">
+          <div className="custom-scrollbar overflow-y-auto px-6 py-5">
             <TaskResultPreview
               sessionId={task?.lastSessionId ?? null}
               runId={task?.lastRunId ?? null}

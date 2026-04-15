@@ -187,7 +187,7 @@ export function AgentTaskSection({ agentId }: { agentId: string }) {
             저장된 단일 작업이 없습니다. 검증된 프롬프트를 작업으로 저장해 반복 실행할 수 있습니다.
           </div>
         ) : (
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="min-h-0 flex-1 custom-scrollbar overflow-y-auto pr-1">
             <div className="space-y-3">
               {visibleTasks.map((task) => (
                 <div

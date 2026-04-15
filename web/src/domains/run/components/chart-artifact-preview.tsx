@@ -239,7 +239,7 @@ export function ChartArtifactPreview(props: {
           {state.spec.source === "vega-lite-subset" ? "Vega-Lite 서브셋" : "시리즈 스펙"}
         </span>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-inset-white">
+      <div className="custom-scrollbar overflow-x-auto rounded-2xl border border-border bg-card shadow-inset-white">
         <svg
           viewBox={`0 0 ${CHART_FRAME_WIDTH} ${CHART_FRAME_HEIGHT}`}
           className="h-80 w-full min-w-112"

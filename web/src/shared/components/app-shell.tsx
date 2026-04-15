@@ -77,7 +77,7 @@ export function AppShell() {
                 "box-border flex h-[calc(100svh-3rem)] max-h-[calc(100svh-3rem)] min-h-0 flex-col overflow-hidden",
                 compactRoute ? "p-5 md:p-6" : "p-8 md:p-10",
               )
-              : "overflow-y-auto p-8 md:p-10",
+              : "custom-scrollbar overflow-y-auto p-8 md:p-10",
           )}
         >
           <Outlet />

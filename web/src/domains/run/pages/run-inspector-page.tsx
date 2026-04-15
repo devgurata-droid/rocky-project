@@ -202,7 +202,7 @@ function JsonPreview(props: {
   return (
     <Card className="gap-0 bg-muted/90 p-5">
       <p className="text-label-md uppercase  text-muted-foreground">{props.title}</p>
-      <pre className="mt-4 overflow-x-auto rounded-2xl bg-foreground p-4 text-label-md leading-6 text-primary-foreground">
+      <pre className="mt-4 custom-scrollbar overflow-x-auto rounded-2xl bg-foreground p-4 text-label-md leading-6 text-primary-foreground">
         {JSON.stringify(props.value, null, 2)}
       </pre>
     </Card>
@@ -591,7 +591,7 @@ export function RunInspectorPage() {
                             </span>
                           </div>
                           {canExpand && expanded ? (
-                            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words font-sans text-body-md leading-7">
+                            <pre className="mt-3 custom-scrollbar overflow-x-auto whitespace-pre-wrap break-words font-sans text-body-md leading-7">
                               {fullText}
                             </pre>
                           ) : (
@@ -714,7 +714,7 @@ export function RunInspectorPage() {
                 {result.stderr.map((line, index) => (
                   <pre
                     key={`${line}-${index}`}
-                    className="overflow-x-auto rounded-2xl bg-foreground px-4 py-3 text-label-md leading-6 text-primary-foreground"
+                    className="custom-scrollbar overflow-x-auto rounded-2xl bg-foreground px-4 py-3 text-label-md leading-6 text-primary-foreground"
                   >
                     {line}
                   </pre>

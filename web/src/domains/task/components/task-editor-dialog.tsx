@@ -326,7 +326,7 @@ export function TaskEditorDialog(props: TaskEditorDialogProps) {
           </DialogHeader>
 
           <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="min-h-0 overflow-y-auto border-b border-border px-6 py-5 lg:border-b-0 lg:border-r">
+            <div className="min-h-0 custom-scrollbar overflow-y-auto border-b border-border px-6 py-5 lg:border-b-0 lg:border-r">
               <div className="space-y-5">
                 <Label className="block">
                   <span className="text-sm font-medium text-foreground">작업 이름</span>
@@ -452,7 +452,7 @@ export function TaskEditorDialog(props: TaskEditorDialogProps) {
               </div>
             </div>
 
-            <div className="min-h-0 overflow-y-auto px-6 py-5">
+            <div className="min-h-0 custom-scrollbar overflow-y-auto px-6 py-5">
               <div className="space-y-5">
                 <div className="rounded-3xl border border-border/70 bg-card/70 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">

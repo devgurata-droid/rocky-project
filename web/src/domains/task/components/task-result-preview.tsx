@@ -133,7 +133,7 @@ export function TaskResultPreview(props: {
       <div
         className={cn(
           "space-y-3 rounded-3xl border border-border/70 bg-muted/35 p-4",
-          props.compact ? "max-h-96 overflow-y-auto" : "max-h-[52vh] overflow-y-auto"
+          props.compact ? "max-h-96 custom-scrollbar overflow-y-auto" : "max-h-[52vh] custom-scrollbar overflow-y-auto"
         )}
       >
         {transcriptQuery.isLoading && visibleMessages.length === 0 ? (

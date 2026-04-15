@@ -522,7 +522,7 @@ function TaskRequestPreviewWindow(props: {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 custom-scrollbar overflow-y-auto px-4 py-3">
           {transcriptQuery.isLoading && transcriptMessages.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border bg-muted px-4 py-6 text-sm text-muted-foreground">
               작업 기록을 불러오는 중입니다.
@@ -566,7 +566,7 @@ function TaskRequestPreviewWindow(props: {
           <div className="flex flex-col gap-3">
             <div
               data-testid="agent-request-preview-composer-body"
-              className="max-h-[min(15rem,36vh)] space-y-3 overflow-y-auto pr-1"
+              className="max-h-[min(15rem,36vh)] space-y-3 custom-scrollbar overflow-y-auto pr-1"
             >
               {composerError ? (
                 <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
@@ -616,7 +616,7 @@ function TaskRequestPreviewWindow(props: {
                     }
                   }}
                   placeholder="이 작업 요청을 이어서 진행할 메시지를 입력합니다."
-                  className="field-sizing-fixed h-28 min-h-28 overflow-y-auto rounded-2xl border-border bg-card px-4 py-3 text-sm leading-6"
+                  className="field-sizing-fixed h-28 min-h-28 custom-scrollbar overflow-y-auto rounded-2xl border-border bg-card px-4 py-3 text-sm leading-6"
                   disabled={composerDisabled}
                 />
               </div>
@@ -1463,7 +1463,7 @@ export function AgentDetailPage() {
                 <div
                   data-testid="agent-detail-request-list"
                   className={cn(
-                    "min-h-0 h-full space-y-3 overflow-y-auto pr-1",
+                    "min-h-0 h-full space-y-3 custom-scrollbar overflow-y-auto pr-1",
                     sessionsError ? "mt-4" : "",
                   )}
                 >

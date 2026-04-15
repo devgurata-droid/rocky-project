@@ -193,7 +193,7 @@ export function AgentMessengerPanel({ agentId }: { agentId: string }) {
           </Button>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 space-y-5 custom-scrollbar overflow-y-auto pr-1">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => (
               <div key={card.label} className="rounded-2xl bg-muted/70 px-4 py-4">
@@ -240,7 +240,7 @@ export function AgentMessengerPanel({ agentId }: { agentId: string }) {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid min-h-0 gap-5 overflow-y-auto px-6 py-5 lg:grid-cols-[1.08fr_0.92fr]">
+            <div className="grid min-h-0 gap-5 custom-scrollbar overflow-y-auto px-6 py-5 lg:grid-cols-[1.08fr_0.92fr]">
               <div className="space-y-5">
                 <div className="rounded-3xl border border-border/70 bg-card/70 px-4 py-4">
                   <div className="flex items-start justify-between gap-3">

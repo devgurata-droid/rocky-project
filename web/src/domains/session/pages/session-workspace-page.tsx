@@ -318,7 +318,7 @@ function PlainMessageViewer(props: {
                   {block.language}
                 </div>
               ) : null}
-              <div className="overflow-x-auto px-4 py-4">
+              <div className="custom-scrollbar overflow-x-auto px-4 py-4">
                 <pre className="w-fit min-w-full whitespace-pre font-mono text-body-sm leading-5">
                   {block.code}
                 </pre>
@@ -607,7 +607,7 @@ function AssistantSection(props: {
                         {language}
                       </div>
                     ) : null}
-                    <div className="overflow-x-auto px-4 py-4">
+                    <div className="custom-scrollbar overflow-x-auto px-4 py-4">
                       <pre className="w-fit min-w-full whitespace-pre font-mono text-body-sm leading-5">
                         <code>{codeProps.children}</code>
                       </pre>
@@ -2233,7 +2233,7 @@ export function SessionWorkspacePage() {
   return (
     <section
       className={cn(
-        "grid h-full max-h-full min-h-0 gap-4 overflow-hidden",
+        "grid h-full max-h-full min-h-0 gap-4 overflow-hidden p-1",
         showWorkspacePanel
           ? "items-stretch lg:grid-cols-workspace"
           : "grid-cols-1"
@@ -2386,7 +2386,7 @@ export function SessionWorkspacePage() {
 
         <div
           ref={transcriptScrollRef}
-          className="mt-2 min-h-0 max-h-full flex-1 space-y-3 overflow-y-auto pr-2"
+          className="custom-scrollbar mt-2 min-h-0 max-h-full flex-1 space-y-3 overflow-y-auto p-0.5 pr-2"
         >
           {updateSessionMutation.isError ? (
             <div className="rounded-3xl border border-destructive/30 bg-destructive/10 px-5 py-4 text-body-md text-destructive">
@@ -2544,7 +2544,7 @@ export function SessionWorkspacePage() {
               />
             </TabsContent>
 
-            <TabsContent value="harness" className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+            <TabsContent value="harness" className="min-h-0 flex-1 custom-scrollbar overflow-y-auto px-4 py-4">
               <SessionSkillsPanel
                 skills={harnessSkills}
                 isLoading={agentSkillsQuery.isLoading}

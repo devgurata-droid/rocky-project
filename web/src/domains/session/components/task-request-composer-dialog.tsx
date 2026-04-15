@@ -186,7 +186,7 @@ export function TaskRequestComposerDialog({
 
           <div
             data-testid="task-request-dialog-body"
-            className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+            className="min-h-0 flex-1 custom-scrollbar overflow-y-auto px-6 py-5"
           >
             <div className="space-y-5">
               <Label className="block">
